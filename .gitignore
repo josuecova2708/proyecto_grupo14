@@ -1,0 +1,18 @@
+# Maven
+target/
+dependency-reduced-pom.xml
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Guía interna del proyecto
+guia.md
