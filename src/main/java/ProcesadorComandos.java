@@ -68,9 +68,9 @@ public class ProcesadorComandos {
         };
     }
 
-    // "param1","param2","param3"  →  ["param1","param2","param3"]
+    // "param1", "param2", "param3"  →  ["param1","param2","param3"]
     static String[] parsearParams(String paramsStr) {
-        String[] parts = paramsStr.split("\",\"");
+        String[] parts = paramsStr.split("\"\\s*,\\s*\"");
         if (parts[0].startsWith("\""))
             parts[0] = parts[0].substring(1);
         String last = parts[parts.length - 1];

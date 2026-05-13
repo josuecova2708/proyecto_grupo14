@@ -109,6 +109,8 @@ CREATE TABLE pago (
   tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('CONTADO','CUOTAS')),
   total NUMERIC(10,2) NOT NULL,
   cuotas INTEGER DEFAULT 1,
+  tasa_interes NUMERIC(5,4) DEFAULT 0,
+  cuota_inicial NUMERIC(10,2) DEFAULT 0,
   fecha TIMESTAMP DEFAULT NOW()
 );
 

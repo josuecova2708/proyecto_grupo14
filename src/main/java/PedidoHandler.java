@@ -43,27 +43,44 @@ public class PedidoHandler {
         int idProducto = Integer.parseInt(params[1]);
         int cantidad   = Integer.parseInt(params[2]);
 
-        String sqlPrecio = "SELECT precio FROM producto WHERE id=? AND activo=true";
-        String sqlDet    = "INSERT INTO pedido_detalle (id_pedido, id_producto, cantidad, precio_unitario, subtotal) VALUES (?,?,?,?,?)";
-        String sqlTotal  = "UPDATE pedido SET total = total + ? WHERE id=?";
+        // Trae precio base y, si hay promoción activa hoy, su porcentaje de descuento
+        String sqlPrecio = """
+                SELECT p.precio,
+                       COALESCE(pr.porcentaje, 0) AS descuento
+                FROM producto p
+                LEFT JOIN promocion pr
+                       ON pr.id_producto = p.id
+                      AND pr.activo = true
+                      AND CURRENT_DATE BETWEEN pr.fecha_inicio AND pr.fecha_fin
+                WHERE p.id = ? AND p.activo = true
+                LIMIT 1
+                """;
+        String sqlDet   = "INSERT INTO pedido_detalle (id_pedido, id_producto, cantidad, precio_unitario, subtotal) VALUES (?,?,?,?,?)";
+        String sqlTotal = "UPDATE pedido SET total = total + ? WHERE id=?";
 
         try (Connection con = ConexionDB.getConnection()) {
-            // Obtener precio del producto
-            java.math.BigDecimal precio;
+            java.math.BigDecimal precioBase, descuento, precioFinal;
             try (PreparedStatement ps = con.prepareStatement(sqlPrecio)) {
                 ps.setInt(1, idProducto);
                 ResultSet rs = ps.executeQuery();
                 if (!rs.next()) return new Respuesta(false, "Producto id=" + idProducto + " no existe o está inactivo.");
-                precio = rs.getBigDecimal("precio");
+                precioBase = rs.getBigDecimal("precio");
+                descuento  = rs.getBigDecimal("descuento");
             }
 
-            java.math.BigDecimal subtotal = precio.multiply(java.math.BigDecimal.valueOf(cantidad));
+            // Aplicar descuento: precio_final = precio * (1 - descuento/100)
+            java.math.BigDecimal factor = java.math.BigDecimal.ONE
+                    .subtract(descuento.divide(java.math.BigDecimal.valueOf(100)));
+            precioFinal = precioBase.multiply(factor)
+                    .setScale(2, java.math.RoundingMode.HALF_UP);
+
+            java.math.BigDecimal subtotal = precioFinal.multiply(java.math.BigDecimal.valueOf(cantidad));
 
             try (PreparedStatement ps = con.prepareStatement(sqlDet)) {
                 ps.setInt(1, idPedido);
                 ps.setInt(2, idProducto);
                 ps.setInt(3, cantidad);
-                ps.setBigDecimal(4, precio);
+                ps.setBigDecimal(4, precioFinal);
                 ps.setBigDecimal(5, subtotal);
                 ps.executeUpdate();
             }
@@ -74,8 +91,11 @@ public class PedidoHandler {
                 ps.executeUpdate();
             }
 
+            String infoPromo = descuento.compareTo(java.math.BigDecimal.ZERO) > 0
+                    ? " (promo -" + descuento + "%, precio base: " + precioBase + ")"
+                    : "";
             return new Respuesta(true, "Detalle agregado al pedido id=" + idPedido +
-                    ": " + cantidad + " x " + precio + " = " + subtotal);
+                    ": " + cantidad + " x " + precioFinal + infoPromo + " = " + subtotal);
         } catch (Exception e) {
             return new Respuesta(false, "Error al insertar detalle: " + e.getMessage());
         }
