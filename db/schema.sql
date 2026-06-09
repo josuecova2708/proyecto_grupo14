@@ -106,7 +106,7 @@ CREATE TABLE venta_detalle (
 CREATE TABLE pago (
   id SERIAL PRIMARY KEY,
   id_venta INTEGER REFERENCES venta(id),
-  tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('CONTADO','CUOTAS')),
+  tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('CONTADO','CUOTAS','QR')),
   total NUMERIC(10,2) NOT NULL,
   cuotas INTEGER DEFAULT 1,
   tasa_interes NUMERIC(5,4) DEFAULT 0,
@@ -121,5 +121,17 @@ CREATE TABLE pago_cuota (
   monto NUMERIC(10,2) NOT NULL,
   fecha_vencimiento DATE NOT NULL,
   pagado BOOLEAN DEFAULT false,
+  fecha_pago TIMESTAMP
+);
+
+-- PagoFácil QR
+CREATE TABLE pago_qr (
+  id SERIAL PRIMARY KEY,
+  id_pago INTEGER REFERENCES pago(id),
+  pagofacil_transaction_id VARCHAR(50),
+  payment_number VARCHAR(50) UNIQUE NOT NULL,
+  checkout_url TEXT,
+  estado VARCHAR(20) DEFAULT 'PENDIENTE'
+    CHECK (estado IN ('PENDIENTE','PAGADO','EXPIRADO','ANULADO')),
   fecha_pago TIMESTAMP
 );

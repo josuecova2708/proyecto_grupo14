@@ -77,7 +77,7 @@ public class CorreoService {
         Respuesta respuesta = ProcesadorComandos.procesar(subject);
         String    cuerpo    = construirCuerpo(subject, respuesta);
 
-        enviarRespuesta(fromEmail, "RE: " + subject, cuerpo);
+        enviarRespuesta(fromEmail, "RE: " + subject, cuerpo, respuesta);
         msg.setFlag(Flags.Flag.DELETED, true);
 
         System.out.println("  -> " + (respuesta.exito ? "EXITO" : "ERROR") + " | Respondido a: " + fromEmail);
@@ -98,13 +98,50 @@ public class CorreoService {
         return sb.toString();
     }
 
-    private static void enviarRespuesta(String to, String subject, String body) throws Exception {
+    private static void enviarRespuesta(String to, String subject, String body, Respuesta respuesta) throws Exception {
         Session smtpSession = Session.getInstance(ConexionCorreo.getSmtpProps());
         MimeMessage reply = new MimeMessage(smtpSession);
         reply.setFrom(new InternetAddress(ConexionCorreo.CORREO));
         reply.addRecipient(Message.RecipientType.TO, new InternetAddress(to));
         reply.setSubject(subject, "UTF-8");
-        reply.setText(body, "UTF-8");
+
+        if (respuesta.tieneImagen()) {
+            MimeMultipart multipart = new MimeMultipart("mixed");
+
+            // Cuerpo del texto
+            MimeBodyPart textPart = new MimeBodyPart();
+            textPart.setText(body, "UTF-8");
+            multipart.addBodyPart(textPart);
+
+            // Imagen adjunta
+            MimeBodyPart imagePart = new MimeBodyPart();
+            jakarta.activation.DataSource ds = new jakarta.activation.DataSource() {
+                @Override
+                public java.io.InputStream getInputStream() throws java.io.IOException {
+                    return new java.io.ByteArrayInputStream(respuesta.imagenAdjunta);
+                }
+                @Override
+                public java.io.OutputStream getOutputStream() {
+                    throw new UnsupportedOperationException();
+                }
+                @Override
+                public String getContentType() {
+                    return "image/png";
+                }
+                @Override
+                public String getName() {
+                    return "qr.png";
+                }
+            };
+            imagePart.setDataHandler(new jakarta.activation.DataHandler(ds));
+            imagePart.setFileName("qr.png");
+            imagePart.setDisposition(Part.ATTACHMENT);
+            multipart.addBodyPart(imagePart);
+
+            reply.setContent(multipart);
+        } else {
+            reply.setText(body, "UTF-8");
+        }
 
         Transport transport = smtpSession.getTransport("smtp");
         transport.connect(ConexionCorreo.SMTP_HOST, ConexionCorreo.SMTP_PORT, null, null);

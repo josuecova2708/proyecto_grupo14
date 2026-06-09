@@ -57,6 +57,7 @@ public class ProcesadorComandos {
             case "LISPAG"  -> PagoHandler.listar(params);
             case "INSPAG"  -> PagoHandler.insertar(params);
             case "MODPAG"  -> PagoHandler.modificar(params);
+            case "VERPAG"  -> PagoHandler.verificarQR(params);
 
             // CU8 - Reportes
             case "REPVEN"  -> ReporteHandler.ventasMes(params);
