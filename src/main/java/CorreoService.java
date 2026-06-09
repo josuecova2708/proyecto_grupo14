@@ -1,5 +1,7 @@
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
+import java.util.Arrays;
+import java.util.Date;
 
 public class CorreoService {
 
@@ -17,6 +19,20 @@ public class CorreoService {
             inbox.open(Folder.READ_WRITE);
 
             Message[] mensajes = inbox.getMessages();
+            
+            // Ordenar mensajes desde el más antiguo al más reciente (Cola / FIFO)
+            Arrays.sort(mensajes, (m1, m2) -> {
+                try {
+                    Date d1 = m1.getSentDate();
+                    Date d2 = m2.getSentDate();
+                    if (d1 == null) return -1;
+                    if (d2 == null) return 1;
+                    return d1.compareTo(d2);
+                } catch (Exception e) {
+                    return 0; // Si hay error, mantener orden original
+                }
+            });
+
             System.out.println("Mensajes en bandeja: " + mensajes.length);
 
             for (Message msg : mensajes) {

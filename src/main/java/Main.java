@@ -12,6 +12,14 @@ public class Main {
             return;
         }
 
-        CorreoService.procesar();
+        while (true) {
+            CorreoService.procesar();
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                System.out.println("Ciclo interrumpido.");
+                break;
+            }
+        }
     }
 }
