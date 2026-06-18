@@ -1,3 +1,8 @@
+package moroncorreo.app;
+
+import moroncorreo.infra.ConexionCorreo;
+import moroncorreo.negocio.Respuesta;
+
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import java.util.Arrays;

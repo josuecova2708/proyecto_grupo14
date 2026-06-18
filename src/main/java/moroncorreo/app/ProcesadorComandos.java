@@ -1,3 +1,10 @@
+package moroncorreo.app;
+
+import moroncorreo.negocio.Respuesta;
+import moroncorreo.negocio.comercial.*;
+import moroncorreo.negocio.operacion.*;
+import moroncorreo.negocio.administracion.*;
+
 import java.util.regex.*;
 
 public class ProcesadorComandos {

@@ -1,3 +1,5 @@
+package moroncorreo.infra;
+
 import java.util.Properties;
 
 public class ConexionCorreo {
@@ -8,17 +10,17 @@ public class ConexionCorreo {
             ? "localhost"
             : "mail.tecnoweb.org.bo";
 
-    static final String POP3_HOST = HOST;
-    static final int    POP3_PORT = 110;
+    public static final String POP3_HOST = HOST;
+    public static final int    POP3_PORT = 110;
 
-    static final String SMTP_HOST = HOST;
-    static final int    SMTP_PORT = 25;
+    public static final String SMTP_HOST = HOST;
+    public static final int    SMTP_PORT = 25;
 
-    static final String USUARIO  = "grupo14sa";
-    static final String PASSWORD = "grup014grup014*";
-    static final String CORREO   = "grupo14sa@tecnoweb.org.bo";
+    public static final String USUARIO  = "grupo14sa";
+    public static final String PASSWORD = "grup014grup014*";
+    public static final String CORREO   = "grupo14sa@tecnoweb.org.bo";
 
-    static Properties getPop3Props() {
+    public static Properties getPop3Props() {
         Properties p = new Properties();
         p.put("mail.pop3.host",            POP3_HOST);
         p.put("mail.pop3.port",            String.valueOf(POP3_PORT));
@@ -27,7 +29,7 @@ public class ConexionCorreo {
         return p;
     }
 
-    static Properties getSmtpProps() {
+    public static Properties getSmtpProps() {
         Properties p = new Properties();
         p.put("mail.smtp.host",            SMTP_HOST);
         p.put("mail.smtp.port",            String.valueOf(SMTP_PORT));

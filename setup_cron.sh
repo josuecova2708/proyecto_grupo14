@@ -1,4 +1,4 @@
-#!/bin/bash
+    #!/bin/bash
 # Instala el cron job que ejecuta MoronCorreo cada 5 minutos.
 # Ejecutar UNA SOLA VEZ en el servidor: bash setup_cron.sh
 

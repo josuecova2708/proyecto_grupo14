@@ -1,3 +1,7 @@
+package moroncorreo.app;
+
+import moroncorreo.infra.ConexionDB;
+
 import java.sql.Connection;
 
 public class Main {

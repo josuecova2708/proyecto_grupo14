@@ -1,10 +1,12 @@
+package moroncorreo.infra;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class ConexionDB {
 
-    static final String MODE = System.getProperty("MODE", "DEV");
+    public static final String MODE = System.getProperty("MODE", "DEV");
 
     private static final String HOST = MODE.equals("SERVER")
             ? "localhost"

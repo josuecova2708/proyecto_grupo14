@@ -1,3 +1,9 @@
+package moroncorreo.negocio.comercial;
+
+import moroncorreo.infra.ConexionDB;
+import moroncorreo.negocio.Respuesta;
+import moroncorreo.negocio.TablaFormato;
+
 import java.sql.*;
 
 public class VentaHandler {

@@ -1,3 +1,5 @@
+package moroncorreo.negocio;
+
 public class Respuesta {
     public final boolean exito;
     public final String  mensaje;

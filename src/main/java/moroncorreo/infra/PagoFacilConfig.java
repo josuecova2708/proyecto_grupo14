@@ -1,3 +1,5 @@
+package moroncorreo.infra;
+
 public class PagoFacilConfig {
 
     static final String COMMERCE_ID =

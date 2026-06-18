@@ -1,3 +1,9 @@
+package moroncorreo.negocio.administracion;
+
+import moroncorreo.infra.ConexionDB;
+import moroncorreo.negocio.Respuesta;
+import moroncorreo.negocio.TablaFormato;
+
 import java.sql.*;
 import java.util.Set;
 
