@@ -1,10 +1,12 @@
 package moroncorreo.app;
 
+import moroncorreo.infra.ConexionDB;
 import moroncorreo.infra.ConexionCorreo;
 import moroncorreo.negocio.Respuesta;
 
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -12,6 +14,13 @@ public class CorreoService {
 
     public static void procesar() {
         System.out.println("Iniciando ciclo de correo...");
+
+        // ── Verificar BD antes de tocar cualquier correo ──────────────────────
+        if (!ConexionDB.estaDisponible()) {
+            System.out.println("  [BD NO DISPONIBLE] Ciclo saltado — los correos se conservan para reintentar.");
+            return;
+        }
+
         Session pop3Session = Session.getInstance(ConexionCorreo.getPop3Props());
         Store  store  = null;
         Folder inbox  = null;
@@ -24,7 +33,7 @@ public class CorreoService {
             inbox.open(Folder.READ_WRITE);
 
             Message[] mensajes = inbox.getMessages();
-            
+
             // Ordenar mensajes desde el más antiguo al más reciente (Cola / FIFO)
             Arrays.sort(mensajes, (m1, m2) -> {
                 try {
@@ -34,7 +43,7 @@ public class CorreoService {
                     if (d2 == null) return 1;
                     return d1.compareTo(d2);
                 } catch (Exception e) {
-                    return 0; // Si hay error, mantener orden original
+                    return 0;
                 }
             });
 
@@ -43,6 +52,9 @@ public class CorreoService {
             for (Message msg : mensajes) {
                 try {
                     procesarMensaje(msg);
+                } catch (SQLException e) {
+                    // Error de BD durante el procesamiento — NO eliminar el correo
+                    System.out.println("  [ERROR BD] Correo conservado para reintentar: " + e.getMessage());
                 } catch (Exception e) {
                     System.out.println("  [ERROR procesando mensaje]: " + e.getMessage());
                 }
@@ -79,9 +91,15 @@ public class CorreoService {
 
         System.out.println("  Procesando: " + fromEmail + " | " + subject);
 
+        // procesar() devuelve Respuesta — si internamente hubo SQLException la relanza
         Respuesta respuesta = ProcesadorComandos.procesar(subject);
-        String    cuerpo    = construirCuerpo(subject, respuesta);
 
+        // Si el error fue de BD, relanzar como SQLException para que el ciclo NO elimine el mensaje
+        if (respuesta.errorBD) {
+            throw new SQLException(respuesta.mensaje);
+        }
+
+        String cuerpo = construirCuerpo(subject, respuesta);
         enviarRespuesta(fromEmail, "RE: " + subject, cuerpo, respuesta);
         msg.setFlag(Flags.Flag.DELETED, true);
 

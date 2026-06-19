@@ -21,4 +21,16 @@ public class ConexionDB {
     public static Connection getConnection() throws SQLException {
         return DriverManager.getConnection(URL, USER, PASS);
     }
+
+    /**
+     * Verifica si la BD está disponible con un ping rápido (timeout 3s).
+     * No lanza excepción — devuelve true/false.
+     */
+    public static boolean estaDisponible() {
+        try (Connection con = DriverManager.getConnection(URL, USER, PASS)) {
+            return con.isValid(3); // timeout 3 segundos
+        } catch (Exception e) {
+            return false;
+        }
+    }
 }

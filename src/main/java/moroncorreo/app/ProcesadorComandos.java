@@ -1,9 +1,9 @@
 package moroncorreo.app;
 
 import moroncorreo.negocio.Respuesta;
+import moroncorreo.negocio.administracion.*;
 import moroncorreo.negocio.comercial.*;
 import moroncorreo.negocio.operacion.*;
-import moroncorreo.negocio.administracion.*;
 
 import java.util.regex.*;
 
@@ -16,16 +16,22 @@ public class ProcesadorComandos {
             return new Respuesta(false, "Subject vacio o nulo.");
         }
 
+        // HELP no necesita corchetes — funciona solo con "HELP"
+        if (subject.trim().equalsIgnoreCase("HELP")) {
+            return HelpHandler.ayuda(new String[0]);
+        }
+
         Matcher m = PATRON.matcher(subject.trim());
         if (!m.matches()) {
             return new Respuesta(false,
-                    "Formato invalido. Use: COMANDO[\"param1\",\"param2\"]");
+                    "Formato invalido. Use: COMANDO[\"param1\",\"param2\"]\n" +
+                    "Envíe HELP para ver todos los comandos disponibles.");
         }
 
         String   comando = m.group(1);
         String[] params  = parsearParams(m.group(2));
 
-        return switch (comando) {
+        Respuesta r = switch (comando) {
             // CU1 - Usuarios
             case "LISUSR" -> UsuarioHandler.listar(params);
             case "INSUSR" -> UsuarioHandler.insertar(params);
@@ -72,8 +78,33 @@ public class ProcesadorComandos {
             case "REPPRO"  -> ReporteHandler.promocionesActivas(params);
             case "REPCUO"  -> ReporteHandler.cuotasPendientes(params);
 
-            default -> new Respuesta(false, "Comando desconocido: " + comando);
+            // Ayuda
+            case "HELP"    -> HelpHandler.ayuda(params);
+
+            default -> new Respuesta(false, "Comando desconocido: " + comando +
+                    ". Envíe HELP[\"*\"] para ver todos los comandos disponibles.");
         };
+
+        // Si el handler reportó error, verificar si fue culpa de la BD
+        if (!r.exito && !r.errorBD && esErrorBD(r.mensaje)) {
+            return Respuesta.errorBD(r.mensaje);
+        }
+        return r;
+    }
+
+    /**
+     * Detecta si un mensaje de error corresponde a un fallo de BD/conexión.
+     */
+    private static boolean esErrorBD(String msg) {
+        if (msg == null) return false;
+        String lower = msg.toLowerCase();
+        return lower.contains("connection")
+            || lower.contains("refused")
+            || lower.contains("timeout")
+            || lower.contains("jdbc")
+            || lower.contains("postgresql")
+            || lower.contains("sql")
+            || lower.contains("socket");
     }
 
     // "param1", "param2", "param3"  →  ["param1","param2","param3"]
