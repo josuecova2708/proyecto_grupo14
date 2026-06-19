@@ -397,12 +397,26 @@ public class PagoHandler {
 
             // Consultar a PagoFácil el estado actual
             JsonObject txn = PagoFacilClient.consultarTransaccion(transactionId);
-            int paymentStatus = txn.get("paymentStatus").getAsInt();
 
-            // 1=PENDIENTE, 2=PAGADO, 3=REVERTIDO, 4=ANULADO
+            // LOG DE DEPURACIÓN — ver la respuesta completa de PagoFácil
+            System.out.println("  [PagoFacil] Respuesta query-transaction: " + txn.toString());
+
+            // Intentar distintas claves que PagoFácil podría usar
+            int paymentStatus = 1; // default = PENDIENTE
+            if (txn.has("paymentStatus") && !txn.get("paymentStatus").isJsonNull()) {
+                paymentStatus = txn.get("paymentStatus").getAsInt();
+            } else if (txn.has("status") && !txn.get("status").isJsonNull()) {
+                paymentStatus = txn.get("status").getAsInt();
+            } else if (txn.has("state") && !txn.get("state").isJsonNull()) {
+                paymentStatus = txn.get("state").getAsInt();
+            }
+            System.out.println("  [PagoFacil] paymentStatus interpretado: " + paymentStatus);
+
+            // 1=PENDIENTE, 2=PAGADO, 3=REVERTIDO, 4=ANULADO, 5=REVISIÓN (pago recibido, en revisión bancaria)
             String nuevoEstado;
             switch (paymentStatus) {
                 case 2  -> nuevoEstado = "PAGADO";
+                case 5  -> nuevoEstado = "PAGADO";  // Revisión: pago recibido, procesando con banco
                 case 3  -> nuevoEstado = "ANULADO";
                 case 4  -> nuevoEstado = "ANULADO";
                 default -> nuevoEstado = "PENDIENTE";
@@ -427,11 +441,23 @@ public class PagoHandler {
                 }
                 String fechaPago = txn.has("paymentDate") && !txn.get("paymentDate").isJsonNull()
                         ? txn.get("paymentDate").getAsString() : "hoy";
+                String horaPago  = txn.has("paymentTime") && !txn.get("paymentTime").isJsonNull()
+                        ? txn.get("paymentTime").getAsString() : "";
+                String pagador   = txn.has("payerName") && !txn.get("payerName").isJsonNull()
+                        ? txn.get("payerName").getAsString() : "—";
+                String banco     = txn.has("payerBank") && !txn.get("payerBank").isJsonNull()
+                        ? txn.get("payerBank").getAsString() : "—";
+                String statusDesc = txn.has("paymentStatusDescription") && !txn.get("paymentStatusDescription").isJsonNull()
+                        ? txn.get("paymentStatusDescription").getAsString() : nuevoEstado;
+
                 return new Respuesta(true,
-                        "PAGO QR CONFIRMADO!\n" +
+                        "✅ PAGO QR CONFIRMADO!\n" +
                         "Venta ID     : " + idVenta + "\n" +
                         "Total pagado : " + totalPago + " Bs.\n" +
-                        "Fecha pago   : " + fechaPago + "\n" +
+                        "Fecha pago   : " + fechaPago + " " + horaPago + "\n" +
+                        "Pagador      : " + pagador + "\n" +
+                        "Banco        : " + banco + "\n" +
+                        "Estado PF    : " + statusDesc + "\n" +
                         "Transaccion  : " + transactionId + "\n" +
                         "\nLa cuota ha sido marcada como pagada automaticamente.");
             } else {
